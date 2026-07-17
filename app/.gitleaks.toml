@@ -1,0 +1,22 @@
+# Gitleaks configuration for the VulnShop DevSecOps pipeline demo.
+# Extends the default Gitleaks ruleset (which already covers AWS keys,
+# generic API keys, JWTs, private keys, etc.) and adds one custom rule
+# tuned to this app's seeded secret pattern.
+
+title = "vulnshop-gitleaks-config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "vulnshop-hardcoded-jwt-secret"
+description = "Hardcoded JWT secret pattern used in VulnShop demo app"
+regex = '''JWT_SECRET\s*=\s*["']?[A-Za-z0-9_\-]{6,}["']?'''
+tags = ["secret", "jwt", "demo"]
+
+[allowlist]
+description = "Allow the documented example/template values"
+paths = [
+  '''\.env\.example$''',
+  '''docs/.*'''
+]

@@ -1,0 +1,272 @@
+/* =========================================================
+   VulnShop Design Tokens
+   A deliberately "competent mid-size e-commerce site, circa
+   a few product refreshes ago" look — believable as a real
+   small retailer, not a flashy modern SaaS demo. The point is
+   that vulnerabilities hide in plain sight inside ordinary,
+   unremarkable features (search, login, profile).
+   ========================================================= */
+
+:root {
+  /* Palette */
+  --bg: #faf9f6;
+  --surface: #ffffff;
+  --surface-sunken: #f1efe9;
+  --border: #e2ded3;
+  --border-strong: #cdc6b4;
+
+  --ink: #22252b;
+  --ink-soft: #585c63;
+  --ink-faint: #8b8f96;
+
+  --indigo: #2b3a67;
+  --indigo-dark: #1d2849;
+  --teal: #3e8989;
+  --teal-dark: #2d6868;
+  --amber: #d98e04;
+  --amber-bg: #fdf1da;
+  --red: #b3261e;
+  --red-bg: #fbeae8;
+  --green: #2e7d32;
+  --green-bg: #e9f3ea;
+
+  /* Type */
+  --font-heading: "Spline Sans", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", "Consolas", monospace;
+
+  /* Layout */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --max-width: 1140px;
+  --shadow-card: 0 1px 2px rgba(34, 37, 43, 0.06), 0 1px 1px rgba(34, 37, 43, 0.04);
+  --shadow-pop: 0 8px 24px rgba(34, 37, 43, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--indigo-dark);
+  margin: 0;
+}
+
+a {
+  color: var(--teal-dark);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+button, input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+
+code, .mono {
+  font-family: var(--font-mono);
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 0 16px;
+  }
+}
+
+/* ---------- shared building blocks ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: filter 0.12s ease, transform 0.05s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--teal);
+  color: #fff;
+}
+.btn-primary:hover {
+  filter: brightness(1.06);
+}
+.btn-secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--ink);
+}
+.btn-secondary:hover {
+  background: var(--surface-sunken);
+}
+.btn-block {
+  width: 100%;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.field input,
+.field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+}
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(62, 137, 137, 0.15);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.eyebrow {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--teal-dark);
+}
+
+.banner {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  margin-bottom: 16px;
+  border: 1px solid transparent;
+}
+.banner-error {
+  background: var(--red-bg);
+  border-color: #e8b9b5;
+  color: var(--red);
+}
+.banner-success {
+  background: var(--green-bg);
+  border-color: #b9d6bb;
+  color: var(--green);
+}
+.banner-info {
+  background: var(--amber-bg);
+  border-color: #f0d59f;
+  color: #8a5d02;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.badge-admin {
+  background: var(--amber-bg);
+  color: #8a5d02;
+}
+.badge-user {
+  background: var(--surface-sunken);
+  color: var(--ink-soft);
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table.data-table th,
+table.data-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+table.data-table th {
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- book cards ---------- */
+.book-card {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.book-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-pop);
+}
+.cart-link:hover svg {
+  stroke: var(--teal-dark);
+}

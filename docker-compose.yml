@@ -1,0 +1,12 @@
+services:
+  vulnshop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vulnshop
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-supersecret123}
+    restart: unless-stopped

@@ -1,0 +1,161 @@
+// Jenkinsfile — alt-path version of the same DevSecOps pipeline shown in
+// GitHub Actions. Same seven security stages, declarative Jenkins syntax.
+// Assumes Gitleaks, Trivy, and Checkov CLIs are available on the Jenkins
+// agent, plus the SonarQube Scanner tool + "SonarQube servers" config in
+// Jenkins named 'SonarQube' (see docs/SETUP.md for setup shown on screen).
+
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "vulnshop"
+        IMAGE_TAG  = "${env.BUILD_NUMBER}"
+        EC2_HOST   = credentials('ec2-host')
+        EC2_REPO_URL = credentials('ec2-repo-url')
+        // Name of the SonarScanner tool configured under Manage Jenkins →
+        // Tools. Adjust to match your Jenkins setup.
+        SCANNER_HOME = tool 'SonarScanner'
+    }
+
+    stages {
+
+        stage('1. Secrets Scan - Gitleaks') {
+            steps {
+                sh '''
+                    gitleaks detect \
+                      --source=. \
+                      --config=app/.gitleaks.toml \
+                      --report-format=json \
+                      --report-path=gitleaks-report.json \
+                      --exit-code=0
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'gitleaks-report.json', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('2. SAST - SonarQube') {
+            steps {
+                // 'SonarQube' must match the server name configured under
+                // Manage Jenkins → System → SonarQube servers.
+                withSonarQubeEnv('SonarQube') {
+                    sh "${SCANNER_HOME}/bin/sonar-scanner"
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                // Report-only for this tutorial: don't abort the pipeline on a
+                // failing gate so every later stage still runs. Flip
+                // abortPipeline to true once your baseline is clean.
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: false
+                }
+            }
+        }
+
+        stage('3. SCA - Trivy Filesystem Scan') {
+            steps {
+                sh '''
+                    trivy fs \
+                      --severity CRITICAL,HIGH,MEDIUM \
+                      --format table \
+                      --output trivy-fs-report.txt \
+                      . || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-fs-report.txt', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('4. IaC Scan - Checkov') {
+            steps {
+                sh '''
+                    checkov -d terraform-ec2 \
+                      --compact \
+                      --output cli \
+                      --soft-fail || true
+                '''
+            }
+        }
+
+        stage('5. Build & Scan Image - Trivy') {
+            steps {
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                sh """
+                    trivy image \
+                      --severity CRITICAL,HIGH \
+                      --format table \
+                      --output trivy-image-report.txt \
+                      ${IMAGE_NAME}:${IMAGE_TAG} || true
+                """
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'trivy-image-report.txt', allowEmptyArchive: true
+                }
+            }
+        }
+
+        stage('6. Deploy to EC2') {
+            steps {
+                sshagent(['ec2-ssh-key']) {
+                    sh '''
+                        ssh -o StrictHostKeyChecking=no ec2-user@$EC2_HOST '
+                          set -e
+                          APP_DIR=/opt/vulnshop
+                          if [ ! -d "$APP_DIR/.git" ]; then
+                            sudo mkdir -p "$APP_DIR" &&
+                            sudo chown $USER:$USER "$APP_DIR" &&
+                            git clone '"$EC2_REPO_URL"' "$APP_DIR";
+                          fi &&
+                          cd "$APP_DIR" &&
+                          git pull origin main &&
+                          docker compose down || true &&
+                          docker compose up -d --build &&
+                          echo "Waiting for app to become healthy on :3000 ..." &&
+                          for i in $(seq 1 30); do
+                            if curl -fsS http://localhost:3000/healthz >/dev/null 2>&1; then
+                              echo "App is healthy (attempt $i)."; break;
+                            fi;
+                            if [ "$i" = "30" ]; then
+                              echo "App did not become healthy within 60s after deploy.";
+                              docker compose ps; docker compose logs --tail=50; exit 1;
+                            fi;
+                            sleep 2;
+                          done
+                        '
+                    '''
+                }
+            }
+        }
+
+        stage('7. DAST - OWASP ZAP') {
+            steps {
+                sh '''
+                    docker run -t owasp/zap2docker-stable zap-baseline.py \
+                      -t http://$EC2_HOST:3000 \
+                      -r zap-report.html || true
+                '''
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'zap-report.html', allowEmptyArchive: true
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline complete. Review archived scan reports in build artifacts.'
+        }
+    }
+}
